@@ -1,37 +1,11 @@
 import { useMemo, useState } from "react";
 import { metrics, sampleText, suggestions, userBaseline } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw } from "lucide-react";
-
-function ScoreRing({ score }: { score: number }) {
-  const r = 38;
-  const c = 2 * Math.PI * r;
-  const offset = c - (score / 100) * c;
-  return (
-    <div className="relative h-20 w-20 shrink-0">
-      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-        <circle cx="50" cy="50" r={r} className="fill-none stroke-brand-muted" strokeWidth="8" />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          className="fill-none stroke-brand transition-all duration-700"
-          strokeWidth="8"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="absolute inset-0 grid place-items-center">
-        <span className="font-serif text-[22px] font-semibold leading-none text-ink">{score}</span>
-      </div>
-    </div>
-  );
-}
+import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 
 function MetricBar({ score }: { score: number }) {
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand-muted">
+    <div className="h-2.5 w-full overflow-hidden rounded-full bg-brand-muted">
       <div
         className="h-full rounded-full bg-brand transition-all duration-700"
         style={{ width: `${score}%` }}
@@ -86,6 +60,7 @@ export default function InfluenceDashboard() {
   const [activeRefineId, setActiveRefineId] = useState<string | null>(null);
   const [refinePrompt, setRefinePrompt] = useState("");
   const [refineVariations, setRefineVariations] = useState<Record<string, string[]>>({});
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   const overall = useMemo(
     () => Math.round(metrics.reduce((s, m) => s + m.score, 0) / metrics.length),
@@ -216,24 +191,47 @@ export default function InfluenceDashboard() {
           {/* Influence Index */}
           <div className="border-b border-border p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-serif text-[22px] text-ink">DNA Alignment</h2>
-              </div>
-              <ScoreRing score={overall} />
+              <h2 className="font-serif text-[22px] text-ink">DNA Alignment</h2>
+              <span className="font-serif text-[22px] leading-none text-ink">{overall}</span>
             </div>
-            <div className="space-y-2.5">
-              {metrics.map((m) => (
-                <div key={m.id}>
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs text-ink">{m.name}</span>
-                    <span className="font-serif text-xs tabular-nums text-ink-muted">
-                      {m.score}
-                    </span>
-                  </div>
-                  <MetricBar score={m.score} />
+            <div className="mb-3">
+              <MetricBar score={overall} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowBreakdown((current) => !current)}
+              className="flex items-center gap-1 text-xs text-ink-muted transition hover:text-ink"
+            >
+              {showBreakdown ? (
+                <>
+                  <ChevronUp className="h-3 w-3" />
+                  Hide breakdown
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3" />
+                  View breakdown
+                </>
+              )}
+            </button>
+            {showBreakdown && (
+              <>
+                <div className="my-4 border-b border-border/70" />
+                <div className="space-y-2.5">
+                  {metrics.map((m) => (
+                    <div key={m.id}>
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-xs text-ink">{m.name}</span>
+                        <span className="font-serif text-xs tabular-nums text-ink-muted">
+                          {m.score}
+                        </span>
+                      </div>
+                      <MetricBar score={m.score} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
 
           {/* Suggestions — scrollable */}
