@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans:
+    "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia,
+    serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--ui-muted);
+  --color-muted-foreground: var(--ui-muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-chart-4: var(--chart-4);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --shadow-soft: 0 20px 40px rgba(78, 60, 34, 0.08);
+}
+
+:root {
+  font-family:
+    'Avenir Next', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: oklch(0.31 0.03 56);
+  background-color: #f6efe2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --radius: 0.75rem;
+  --background: #f6f1e8;
+  --foreground: #2f261d;
+  --card: #fffdf9;
+  --card-foreground: #2f261d;
+  --popover: #fffdf9;
+  --popover-foreground: #2f261d;
+  --primary: #2d7f7a;
+  --primary-foreground: #fffdf9;
+  --secondary: #7a2e3a;
+  --secondary-foreground: #fffdf9;
+  --ui-muted: #efe4d8;
+  --ui-muted-foreground: #7c6e63;
+  --accent: #eef6f5;
+  --accent-foreground: #2f261d;
+  --destructive: oklch(0.61 0.18 28);
+  --border: rgba(47, 38, 29, 0.12);
+  --input: rgba(47, 38, 29, 0.12);
+  --ring: rgba(45, 127, 122, 0.28);
+  --brand: #2d7f7a;
+  --brand-foreground: #fffdf9;
+  --brand-muted: #d8ebe9;
+  --brand-soft: #eef6f5;
+  --paper: #f8f4ed;
+  --ink: #2f261d;
+  --ink-muted: #6f6257;
+  --chart-4: #7a2e3a;
+}
+
+.dark {
+  --background: oklch(0.19 0.01 56);
+  --foreground: oklch(0.95 0.01 84);
+  --card: oklch(0.24 0.015 56);
+  --card-foreground: oklch(0.95 0.01 84);
+  --popover: oklch(0.24 0.015 56);
+  --popover-foreground: oklch(0.95 0.01 84);
+  --primary: oklch(0.74 0.06 67);
+  --primary-foreground: oklch(0.24 0.015 56);
+  --secondary: oklch(0.31 0.015 56);
+  --secondary-foreground: oklch(0.95 0.01 84);
+  --ui-muted: oklch(0.3 0.01 56);
+  --ui-muted-foreground: oklch(0.78 0.01 75);
+  --accent: oklch(0.31 0.015 56);
+  --accent-foreground: oklch(0.95 0.01 84);
+  --destructive: oklch(0.68 0.17 24);
+  --border: oklch(0.34 0.012 57);
+  --input: oklch(0.34 0.012 57);
+  --ring: oklch(0.69 0.04 67);
+}
+
+* {
+  border-color: var(--border);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
