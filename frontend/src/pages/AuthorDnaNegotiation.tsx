@@ -321,7 +321,7 @@ export default function InfluenceDashboard() {
             </div>
 
             <div className="mt-3 flex items-center justify-between text-xs text-ink-muted">
-              <span>{sampleText.split(/\s+/).length} words · 1 paragraph</span>
+              <span>{sampleText.split(/\s+/).length} words · 5 paragraphs</span>
               <span>Page 1 of 1</span>
             </div>
           </div>
