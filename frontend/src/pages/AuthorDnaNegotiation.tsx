@@ -61,13 +61,17 @@ export default function InfluenceDashboard() {
   const [refinePrompt, setRefinePrompt] = useState("");
   const [refineVariations, setRefineVariations] = useState<Record<string, string[]>>({});
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const overall = useMemo(
     () => Math.round(metrics.reduce((s, m) => s + m.score, 0) / metrics.length),
     [],
   );
 
-  const pending = suggestions.filter((s) => !resolved[s.id]);
+  const visibleSuggestions = selectedCategory
+    ? suggestions.filter((s) => s.category === selectedCategory)
+    : suggestions;
+  const documentParagraphs = sampleText.trim().split(/\n\s*\n/);
   const flaggedTokens = [
     "seems that",
     "perhaps",
@@ -158,23 +162,28 @@ export default function InfluenceDashboard() {
                   suppressContentEditableWarning
                   className="font-serif text-[16px] leading-[1.9] text-ink outline-none"
                 >
-                  <p>
-                    {sampleText
-                      .split(new RegExp(`(${flaggedTokens.join("|")})`, "g"))
-                      .map((part, i) => {
-                        const flagged = flaggedTokens.includes(part);
-                        return flagged ? (
-                          <mark
-                            key={i}
-                            className="bg-transparent text-ink underline decoration-brand decoration-[1.5px] decoration-wavy underline-offset-[2px] [text-decoration-skip-ink:none]"
-                          >
-                            {part}
-                          </mark>
-                        ) : (
-                          <span key={i}>{part}</span>
-                        );
-                      })}
-                  </p>
+                  {documentParagraphs.map((paragraph, paragraphIndex) => (
+                    <p
+                      key={paragraphIndex}
+                      className={paragraphIndex === documentParagraphs.length - 1 ? "" : "mb-4"}
+                    >
+                      {paragraph
+                        .split(new RegExp(`(${flaggedTokens.join("|")})`, "g"))
+                        .map((part, i) => {
+                          const flagged = flaggedTokens.includes(part);
+                          return flagged ? (
+                            <mark
+                              key={i}
+                              className="bg-transparent text-ink underline decoration-brand decoration-[1.5px] decoration-wavy underline-offset-[2px] [text-decoration-skip-ink:none]"
+                            >
+                              {part}
+                            </mark>
+                          ) : (
+                            <span key={i}>{part}</span>
+                          );
+                        })}
+                    </p>
+                  ))}
                 </div>
               </div>
             </div>
@@ -199,7 +208,15 @@ export default function InfluenceDashboard() {
             </div>
             <button
               type="button"
-              onClick={() => setShowBreakdown((current) => !current)}
+              onClick={() =>
+                setShowBreakdown((current) => {
+                  const next = !current;
+                  if (!next) {
+                    setSelectedCategory(null);
+                  }
+                  return next;
+                })
+              }
               className="flex items-center gap-1 text-xs text-ink-muted transition hover:text-ink"
             >
               {showBreakdown ? (
@@ -230,6 +247,40 @@ export default function InfluenceDashboard() {
                     </div>
                   ))}
                 </div>
+                <div className="mt-4 border-t border-border/70 pt-4">
+                  <div className="mb-2 text-[11px] uppercase tracking-wider text-ink-muted">
+                    Filter suggestions
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory(null)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-[11px] transition",
+                        selectedCategory === null
+                          ? "border-brand bg-brand-muted/30 text-ink"
+                          : "border-border bg-background text-ink-muted hover:text-ink",
+                      )}
+                    >
+                      All
+                    </button>
+                    {metrics.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(m.name)}
+                        className={cn(
+                          "rounded-full border px-2.5 py-1 text-[11px] transition",
+                          selectedCategory === m.name
+                            ? "border-brand bg-brand-muted/30 text-ink"
+                            : "border-border bg-background text-ink-muted hover:text-ink",
+                        )}
+                      >
+                        {m.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -238,12 +289,12 @@ export default function InfluenceDashboard() {
           <div>
             <div className="flex items-baseline justify-between border-b border-border px-5 py-3">
               <h3 className="font-serif text-sm text-ink">
-                Suggestions <span className="text-ink-muted">· {pending.length}</span>
+                Suggestions <span className="text-ink-muted">· {visibleSuggestions.length}</span>
               </h3>
               <span className="text-[11px] text-ink-muted">Accept, dismiss, refine</span>
             </div>
             <div className="space-y-2.5 p-4">
-              {suggestions.map((s) => {
+              {visibleSuggestions.map((s) => {
                 const state = resolved[s.id];
                 return (
                   <div
@@ -380,7 +431,6 @@ export default function InfluenceDashboard() {
                                   key={variation}
                                   className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5"
                                 >
-                                  <div className="mt-1 h-4 w-4 shrink-0 rounded-full border border-border bg-background" />
                                   <div className="min-w-0 flex-1">
                                     <p className="font-serif text-[13px] leading-snug text-ink">
                                       {variation}
@@ -390,7 +440,7 @@ export default function InfluenceDashboard() {
                                     type="button"
                                     className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
                                   >
-                                    Preview
+                                    Accept
                                   </button>
                                 </div>
                               ))}
