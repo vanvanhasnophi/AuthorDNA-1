@@ -54,6 +54,55 @@ function getCategoryColor(category: string) {
   return CATEGORY_COLORS[category] ?? CATEGORY_COLORS["Sentence Flow"];
 }
 
+type ViewMode = "document" | "sentence";
+type SuggestionItem = (typeof suggestions)[number];
+
+function splitIntoSentences(paragraph: string) {
+  return (paragraph.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [])
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function normalizeForMatch(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/^\.{3}/, "")
+    .replace(/\.{3}$/, "")
+    .replace(/^"+|"+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findSentenceIndexForSuggestion(paragraphSentences: string[], suggestion: SuggestionItem) {
+  const normalizedTarget = normalizeForMatch(suggestion.targetText ?? suggestion.excerpt ?? "");
+  const normalizedExcerpt = normalizeForMatch(suggestion.excerpt ?? "");
+
+  const exactMatchIndex = paragraphSentences.findIndex((sentence) => {
+    const normalizedSentence = normalizeForMatch(sentence);
+    return (
+      normalizedSentence.includes(normalizedTarget) ||
+      normalizedTarget.includes(normalizedSentence) ||
+      (normalizedExcerpt ? normalizedSentence.includes(normalizedExcerpt) : false)
+    );
+  });
+
+  return exactMatchIndex >= 0 ? exactMatchIndex : 0;
+}
+
+function renderSentenceDiffLine(label: string, text: string, tone: "removed" | "added") {
+  const styles =
+    tone === "removed"
+      ? "border-red-200 bg-red-50 text-red-950"
+      : "border-emerald-200 bg-emerald-50 text-emerald-950";
+
+  return (
+    <div className={cn("rounded-md border px-2.5 py-2", styles)}>
+      <div className="mb-1 text-[10px] font-medium uppercase tracking-wider opacity-70">{label}</div>
+      <p className="font-serif text-[13px] leading-relaxed text-ink">{text}</p>
+    </div>
+  );
+}
+
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -166,6 +215,7 @@ export default function InfluenceDashboard() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [hoveredSuggestionId, setHoveredSuggestionId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("document");
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([]);
 
   const overall = useMemo(
@@ -188,6 +238,32 @@ export default function InfluenceDashboard() {
     "unimaginable",
     "Furthermore",
   ];
+  const sentenceGroups = useMemo(() => {
+    const paragraphSentenceLists = documentParagraphs.map((paragraph) => splitIntoSentences(paragraph));
+
+    return paragraphSentenceLists.map((sentences, paragraphIndex) => {
+      const sentenceSuggestions = suggestions
+        .filter((suggestion) => suggestion.paragraphIndex === paragraphIndex)
+        .map((suggestion) => ({
+          suggestion,
+          sentenceIndex: findSentenceIndexForSuggestion(sentences, suggestion),
+        }));
+
+      return sentences.map((sentence, sentenceIndex) => ({
+        sentence,
+        paragraphIndex,
+        sentenceIndex,
+        suggestions: sentenceSuggestions
+          .filter((item) => item.sentenceIndex === sentenceIndex)
+          .map((item) => item.suggestion),
+      }));
+    });
+  }, [documentParagraphs]);
+
+  const sentenceSuggestionCount = sentenceGroups.reduce(
+    (sum, paragraph) => sum + paragraph.reduce((inner, item) => inner + item.suggestions.length, 0),
+    0,
+  );
 
   const handleRefineClick = (id: string) => {
     setActiveRefineId((current) => {
@@ -276,10 +352,34 @@ export default function InfluenceDashboard() {
                 <span className="opacity-60">·</span>
                 <span>Auto-saved</span>
               </div>
-              <span className="rounded-full bg-brand-muted px-2.5 py-1 text-brand">
-                <Activity className="mr-1 inline h-3 w-3" />
-                Live analysis
-              </span>
+              <div className="flex items-center gap-2">
+                <div className="rounded-full border border-border bg-background p-1 text-[11px] text-ink-muted shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("document")}
+                    className={cn(
+                      "rounded-full px-3 py-1 transition",
+                      viewMode === "document" ? "bg-brand text-brand-foreground" : "hover:text-ink",
+                    )}
+                  >
+                    Document
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("sentence")}
+                    className={cn(
+                      "rounded-full px-3 py-1 transition",
+                      viewMode === "sentence" ? "bg-brand text-brand-foreground" : "hover:text-ink",
+                    )}
+                  >
+                    Sentence view
+                  </button>
+                </div>
+                <span className="rounded-full bg-brand-muted px-2.5 py-1 text-brand">
+                  <Activity className="mr-1 inline h-3 w-3" />
+                  Live analysis
+                </span>
+              </div>
             </div>
 
             {/* A4 page */}
@@ -295,33 +395,118 @@ export default function InfluenceDashboard() {
                 >
                   Writing in the age of AI
                 </h1>
-                <div
-                  contentEditable
-                  suppressContentEditableWarning
-                  className="font-serif text-[16px] leading-[1.9] text-ink outline-none"
-                >
-                  {documentParagraphs.map((paragraph, paragraphIndex) => (
-                    <p
-                      key={paragraphIndex}
-                      ref={(node) => {
-                        paragraphRefs.current[paragraphIndex] = node;
-                      }}
-                      className={paragraphIndex === documentParagraphs.length - 1 ? "" : "mb-4"}
-                    >
-                      {renderParagraphWithHover(
-                        paragraph,
-                        flaggedTokens,
-                        hoveredTarget,
-                        hoveredColor ? hoveredColor.soft : null,
-                      )}
-                    </p>
-                  ))}
-                </div>
+                {viewMode === "document" ? (
+                  <div
+                    contentEditable
+                    suppressContentEditableWarning
+                    className="font-serif text-[16px] leading-[1.9] text-ink outline-none"
+                  >
+                    {documentParagraphs.map((paragraph, paragraphIndex) => (
+                      <p
+                        key={paragraphIndex}
+                        ref={(node) => {
+                          paragraphRefs.current[paragraphIndex] = node;
+                        }}
+                        className={paragraphIndex === documentParagraphs.length - 1 ? "" : "mb-4"}
+                      >
+                        {renderParagraphWithHover(
+                          paragraph,
+                          flaggedTokens,
+                          hoveredTarget,
+                          hoveredColor ? hoveredColor.soft : null,
+                        )}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {sentenceGroups.map((paragraph, paragraphIndex) => (
+                      <div key={paragraphIndex} className="space-y-2">
+                        {paragraph.map((item) => (
+                          <div
+                            key={`${paragraphIndex}-${item.sentenceIndex}`}
+                            className="rounded-xl border border-border bg-background p-4 shadow-sm"
+                          >
+                            <div className="mb-3 flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.2em] text-ink-muted">
+                              <span>Sentence {item.sentenceIndex + 1}</span>
+                              <span>{item.suggestions.length} suggestion{item.suggestions.length === 1 ? "" : "s"}</span>
+                            </div>
+                            <p className="font-serif text-[16px] leading-[1.9] text-ink">{item.sentence}</p>
+                            {item.suggestions.length > 0 && (
+                              <div className="mt-4 space-y-3 border-t border-border/70 pt-4">
+                                {item.suggestions.map((suggestion) => {
+                                  const categoryColor = getCategoryColor(suggestion.category);
+                                  const state = resolved[suggestion.id];
+                                  return (
+                                    <div
+                                      key={suggestion.id}
+                                      className="rounded-lg border border-border bg-paper/50 p-3"
+                                    >
+                                      <div className="mb-2 flex items-center gap-2">
+                                        <span
+                                          className="h-1.5 w-1.5 rounded-full"
+                                          style={{ backgroundColor: categoryColor.fill }}
+                                        />
+                                        <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
+                                          {suggestion.category}
+                                        </span>
+                                        {state && (
+                                          <span className="ml-auto text-[10px] text-ink-muted">
+                                            {state === "accept" ? "Accepted" : "Dismissed"}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="mb-2 text-xs text-ink-muted">{suggestion.observation}</p>
+                                      <div className="space-y-2">
+                                        {renderSentenceDiffLine("Original", suggestion.targetText, "removed")}
+                                        {renderSentenceDiffLine("Proposed", suggestion.proposed, "added")}
+                                      </div>
+                                      <div className="mt-3 grid grid-cols-3 gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => setResolved((current) => ({ ...current, [suggestion.id]: "accept" }))}
+                                          className="flex items-center justify-center gap-1 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-brand-foreground transition hover:opacity-90"
+                                        >
+                                          <Check className="h-3 w-3" /> Accept
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setResolved((current) => ({ ...current, [suggestion.id]: "reject" }))}
+                                          className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:bg-paper"
+                                        >
+                                          <X className="h-3 w-3" /> Dismiss
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRefineClick(suggestion.id)}
+                                          className={cn(
+                                            "flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs transition",
+                                            activeRefineId === suggestion.id
+                                              ? "border-brand bg-brand-muted/30 text-ink"
+                                              : "border-border bg-background text-ink hover:bg-paper",
+                                          )}
+                                        >
+                                          <Sparkles className="h-3 w-3" /> Refine
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="mt-3 flex items-center justify-between text-xs text-ink-muted">
-              <span>{sampleText.split(/\s+/).length} words · 1 paragraph</span>
+              <span>
+                {sampleText.split(/\s+/).length} words · {viewMode === "document" ? "1 paragraph" : `${sentenceSuggestionCount} mapped suggestions`}
+              </span>
               <span>Page 1 of 1</span>
             </div>
           </div>
