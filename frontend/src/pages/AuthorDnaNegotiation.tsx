@@ -1,16 +1,119 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { metrics, sampleText, suggestions, userBaseline } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 
-function MetricBar({ score }: { score: number }) {
+function MetricBar({
+  score,
+  fillColor = "var(--color-brand)",
+  trackColor = "var(--color-brand-muted)",
+}: {
+  score: number;
+  fillColor?: string;
+  trackColor?: string;
+}) {
   return (
-    <div className="h-2.5 w-full overflow-hidden rounded-full bg-brand-muted">
+    <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: trackColor }}>
       <div
-        className="h-full rounded-full bg-brand transition-all duration-700"
-        style={{ width: `${score}%` }}
+        className="h-full rounded-full transition-all duration-700"
+        style={{ width: `${score}%`, backgroundColor: fillColor }}
       />
     </div>
+  );
+}
+
+type CategoryColor = {
+  fill: string;
+  soft: string;
+};
+
+const CATEGORY_COLORS: Record<string, CategoryColor> = {
+  "Sentence Flow": {
+    fill: "oklch(0.74 0.08 190)",
+    soft: "oklch(0.95 0.02 190)",
+  },
+  "Word Choice": {
+    fill: "oklch(0.8 0.09 85)",
+    soft: "oklch(0.95 0.02 85)",
+  },
+  Structure: {
+    fill: "oklch(0.77 0.07 250)",
+    soft: "oklch(0.95 0.02 250)",
+  },
+  Tone: {
+    fill: "oklch(0.76 0.09 22)",
+    soft: "oklch(0.95 0.02 22)",
+  },
+  Punctuation: {
+    fill: "oklch(0.76 0.07 335)",
+    soft: "oklch(0.95 0.02 335)",
+  },
+};
+
+function getCategoryColor(category: string) {
+  return CATEGORY_COLORS[category] ?? CATEGORY_COLORS["Sentence Flow"];
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeExcerpt(value: string) {
+  return value.replace(/^"+|"+$/g, "").replace(/^\.\.\./, "").replace(/\.\.\.$/, "").trim();
+}
+
+function renderFlaggedText(text: string, flaggedTokens: string[]) {
+  return text.split(new RegExp(`(${flaggedTokens.map(escapeRegExp).join("|")})`, "g")).map((part, i) => {
+    const flagged = flaggedTokens.includes(part);
+    return flagged ? (
+      <mark
+        key={i}
+        className="bg-transparent text-ink"
+      >
+        {part}
+      </mark>
+    ) : (
+      <span key={i}>{part}</span>
+    );
+  });
+}
+
+function renderParagraphWithHover(
+  paragraph: string,
+  flaggedTokens: string[],
+  hoverPhrase: string | null,
+  hoverColor: string | null,
+) {
+  const normalizedHover = hoverPhrase ? normalizeExcerpt(hoverPhrase) : "";
+  if (!normalizedHover) {
+    return renderFlaggedText(paragraph, flaggedTokens);
+  }
+
+  const regex = new RegExp(`(${escapeRegExp(normalizedHover)})`, "i");
+  const match = paragraph.match(regex);
+  if (!match || match.index == null) {
+    return renderFlaggedText(paragraph, flaggedTokens);
+  }
+
+  const start = match.index;
+  const end = start + match[0].length;
+  const before = paragraph.slice(0, start);
+  const concern = paragraph.slice(start, end);
+  const after = paragraph.slice(end);
+
+  return (
+    <>
+      {renderFlaggedText(before, flaggedTokens)}
+      <mark
+        className="rounded-sm px-0.5 py-0.5 text-ink"
+        style={{
+          backgroundColor: hoverColor ?? CATEGORY_COLORS["Sentence Flow"].soft,
+        }}
+      >
+        {concern}
+      </mark>
+      {renderFlaggedText(after, flaggedTokens)}
+    </>
   );
 }
 
@@ -62,6 +165,8 @@ export default function InfluenceDashboard() {
   const [refineVariations, setRefineVariations] = useState<Record<string, string[]>>({});
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [hoveredSuggestionId, setHoveredSuggestionId] = useState<string | null>(null);
+  const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([]);
 
   const overall = useMemo(
     () => Math.round(metrics.reduce((s, m) => s + m.score, 0) / metrics.length),
@@ -72,6 +177,9 @@ export default function InfluenceDashboard() {
     ? suggestions.filter((s) => s.category === selectedCategory)
     : suggestions;
   const documentParagraphs = sampleText.trim().split(/\n\s*\n/);
+  const hoveredSuggestion = suggestions.find((s) => s.id === hoveredSuggestionId) ?? null;
+  const hoveredColor = hoveredSuggestion ? getCategoryColor(hoveredSuggestion.category) : null;
+  const hoveredTarget = hoveredSuggestion?.targetText ?? null;
   const flaggedTokens = [
     "seems that",
     "perhaps",
@@ -108,20 +216,50 @@ export default function InfluenceDashboard() {
       <header className="shrink-0 border-b border-border/60 bg-paper/40 backdrop-blur">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-brand-foreground">
-              <span className="font-serif text-sm font-bold">A</span>
-            </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <div className="font-serif text-base font-semibold text-ink">AuthorDNA</div>
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 text-brand"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4c3 2 7 2 10 4s4 6 0 8-7 2-10 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M17 4c-3 2-7 2-10 4S3 14 7 16s7 2 10 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.7"
+                />
+                <circle cx="12" cy="6" r="1" fill="currentColor" />
+                <circle cx="12" cy="18" r="1" fill="currentColor" />
+              </svg>
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
             <div className="hidden text-right md:block">
-              <div className="text-xs text-ink-muted">Profile</div>
               <div className="text-ink">{userBaseline.name}</div>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-muted font-serif text-sm text-brand">
-              EV
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-muted text-brand">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z"
+                  fill="currentColor"
+                />
+              </svg>
             </div>
           </div>
         </div>
@@ -165,23 +303,17 @@ export default function InfluenceDashboard() {
                   {documentParagraphs.map((paragraph, paragraphIndex) => (
                     <p
                       key={paragraphIndex}
+                      ref={(node) => {
+                        paragraphRefs.current[paragraphIndex] = node;
+                      }}
                       className={paragraphIndex === documentParagraphs.length - 1 ? "" : "mb-4"}
                     >
-                      {paragraph
-                        .split(new RegExp(`(${flaggedTokens.join("|")})`, "g"))
-                        .map((part, i) => {
-                          const flagged = flaggedTokens.includes(part);
-                          return flagged ? (
-                            <mark
-                              key={i}
-                              className="bg-transparent text-ink underline decoration-brand decoration-[1.5px] decoration-wavy underline-offset-[2px] [text-decoration-skip-ink:none]"
-                            >
-                              {part}
-                            </mark>
-                          ) : (
-                            <span key={i}>{part}</span>
-                          );
-                        })}
+                      {renderParagraphWithHover(
+                        paragraph,
+                        flaggedTokens,
+                        hoveredTarget,
+                        hoveredColor ? hoveredColor.soft : null,
+                      )}
                     </p>
                   ))}
                 </div>
@@ -243,7 +375,11 @@ export default function InfluenceDashboard() {
                           {m.score}
                         </span>
                       </div>
-                      <MetricBar score={m.score} />
+                      <MetricBar
+                        score={m.score}
+                        fillColor={getCategoryColor(m.name).fill}
+                        trackColor={getCategoryColor(m.name).soft}
+                      />
                     </div>
                   ))}
                 </div>
@@ -258,7 +394,7 @@ export default function InfluenceDashboard() {
                       className={cn(
                         "rounded-full border px-2.5 py-1 text-[11px] transition",
                         selectedCategory === null
-                          ? "border-brand bg-brand-muted/30 text-ink"
+                          ? "border-brand bg-brand-muted/20 text-ink"
                           : "border-border bg-background text-ink-muted hover:text-ink",
                       )}
                     >
@@ -271,10 +407,16 @@ export default function InfluenceDashboard() {
                         onClick={() => setSelectedCategory(m.name)}
                         className={cn(
                           "rounded-full border px-2.5 py-1 text-[11px] transition",
-                          selectedCategory === m.name
-                            ? "border-brand bg-brand-muted/30 text-ink"
-                            : "border-border bg-background text-ink-muted hover:text-ink",
+                          selectedCategory === m.name ? "text-ink" : "text-ink-muted hover:text-ink",
                         )}
+                        style={{
+                          borderColor:
+                            selectedCategory === m.name
+                              ? getCategoryColor(m.name).fill
+                              : getCategoryColor(m.name).soft,
+                          backgroundColor:
+                            selectedCategory === m.name ? getCategoryColor(m.name).soft : "transparent",
+                        }}
                       >
                         {m.name}
                       </button>
@@ -296,6 +438,7 @@ export default function InfluenceDashboard() {
             <div className="space-y-2.5 p-4">
               {visibleSuggestions.map((s) => {
                 const state = resolved[s.id];
+                const categoryColor = getCategoryColor(s.category);
                 return (
                   <div
                     key={s.id}
@@ -305,18 +448,22 @@ export default function InfluenceDashboard() {
                       state === "reject" && "opacity-60",
                       !state && "border-border bg-background hover:border-brand/40",
                     )}
+                    onMouseEnter={() => {
+                      setHoveredSuggestionId(s.id);
+                      const paragraphIndex = s.paragraphIndex ?? 0;
+                      window.requestAnimationFrame(() => {
+                        paragraphRefs.current[paragraphIndex]?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        });
+                      });
+                    }}
+                    onMouseLeave={() =>
+                      setHoveredSuggestionId((current) => (current === s.id ? null : current))
+                    }
                   >
                     <div className="mb-2 flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "h-1.5 w-1.5 rounded-full",
-                          s.severity === "high"
-                            ? "bg-brand"
-                            : s.severity === "medium"
-                              ? "bg-chart-4"
-                              : "bg-ink-muted",
-                        )}
-                      />
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColor.fill }} />
                       <span className="text-[10px] font-medium uppercase tracking-wider text-ink-muted">
                         {s.category}
                       </span>
