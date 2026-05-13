@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { metrics, sampleText, suggestions, userBaseline } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { Check, X, Sparkles, Activity, FileText } from "lucide-react";
+import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw } from "lucide-react";
 
 function ScoreRing({ score }: { score: number }) {
   const r = 38;
@@ -40,8 +40,52 @@ function MetricBar({ score }: { score: number }) {
   );
 }
 
+function buildRefineVariations(category: string) {
+  switch (category) {
+    case "Tone":
+      return [
+        "Artificial intelligence has redefined academic authorship.",
+        "Artificial intelligence has changed scholarly writing significantly.",
+        "Artificial intelligence has redefined how scholars approach writing.",
+      ];
+    case "Sentence Flow":
+      return [
+        "The technology has evolved rapidly. It brings real opportunities and challenges.",
+        "The technology has changed quickly, creating opportunities and trade-offs worth weighing.",
+        "The technology has advanced at pace, and scholars are now balancing its benefits with its costs.",
+      ];
+    case "Word Choice":
+      return [
+        "...questions of authorship, originality, and honesty...",
+        "...questions of authorship, originality, and integrity...",
+        "...questions of authorship, originality, and responsibility...",
+      ];
+    case "Structure":
+      return [
+        "The integration of these tools has shifted academic writing in subtle but important ways.",
+        "These tools are changing academic writing, but the implications are still unfolding.",
+        "The tools are now part of the writing process, and the full effects are still emerging.",
+      ];
+    case "Punctuation":
+      return [
+        "The integration of these tools — quietly, over years — has blurred the boundaries...",
+        "The integration of these tools, over time, has blurred the boundaries...",
+        "The integration of these tools has blurred the boundaries between human creativity and machine assistance.",
+      ];
+    default:
+      return [
+        "The proposed wording stays close to the original while making the change more direct.",
+        "This version keeps the meaning but tightens the phrasing.",
+        "A slightly softer alternative that preserves the original intent.",
+      ];
+  }
+}
+
 export default function InfluenceDashboard() {
   const [resolved, setResolved] = useState<Record<string, "accept" | "reject">>({});
+  const [activeRefineId, setActiveRefineId] = useState<string | null>(null);
+  const [refinePrompt, setRefinePrompt] = useState("");
+  const [refineVariations, setRefineVariations] = useState<Record<string, string[]>>({});
 
   const overall = useMemo(
     () => Math.round(metrics.reduce((s, m) => s + m.score, 0) / metrics.length),
@@ -57,6 +101,27 @@ export default function InfluenceDashboard() {
     "unimaginable",
     "Furthermore",
   ];
+
+  const handleRefineClick = (id: string) => {
+    setActiveRefineId((current) => {
+      const next = current === id ? null : id;
+      if (next !== current) {
+        setRefinePrompt("");
+      }
+      return next;
+    });
+  };
+
+  const handleSubmitRefine = (id: string) => {
+    const prompt = refinePrompt.trim();
+    if (!prompt) {
+      return;
+    }
+    setRefineVariations((current) => ({
+      ...current,
+      [id]: buildRefineVariations(suggestions.find((s) => s.id === id)?.category ?? ""),
+    }));
+  };
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -126,7 +191,7 @@ export default function InfluenceDashboard() {
                         return flagged ? (
                           <mark
                             key={i}
-                            className="bg-transparent px-0.5 text-ink underline decoration-secondary decoration-wavy underline-offset-4"
+                            className="bg-transparent text-ink underline decoration-brand decoration-[1.5px] decoration-wavy underline-offset-[2px] [text-decoration-skip-ink:none]"
                           >
                             {part}
                           </mark>
@@ -224,17 +289,6 @@ export default function InfluenceDashboard() {
                       </p>
                     </div>
 
-                    <div className="mb-2.5 grid grid-cols-2 gap-2 text-[11px]">
-                      <div>
-                        <div className="mb-0.5 font-medium text-ink">Gain</div>
-                        <div className="leading-snug text-ink-muted">{s.tradeoff.gain}</div>
-                      </div>
-                      <div>
-                        <div className="mb-0.5 font-medium text-ink">Trade-off</div>
-                        <div className="leading-snug text-ink-muted">{s.tradeoff.loss}</div>
-                      </div>
-                    </div>
-
                     {!state && (
                       <div className="grid grid-cols-3 gap-1.5">
                         <button
@@ -249,9 +303,102 @@ export default function InfluenceDashboard() {
                         >
                           <X className="h-3 w-3" /> Dismiss
                         </button>
-                        <button className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:bg-paper">
+                        <button
+                          type="button"
+                          onClick={() => handleRefineClick(s.id)}
+                          className={cn(
+                            "flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs transition",
+                            activeRefineId === s.id
+                              ? "border-brand bg-brand-muted/30 text-ink"
+                              : "border-border bg-background text-ink hover:bg-paper",
+                          )}
+                        >
                           <Sparkles className="h-3 w-3" /> Refine
                         </button>
+                      </div>
+                    )}
+
+                    {activeRefineId === s.id && (
+                      <div className="mt-3 border-t border-border pt-3">
+                        <div className="mb-1">
+                          <div className="font-serif text-sm font-medium text-ink">
+                            Refine this suggestion
+                          </div>
+                          <div className="text-xs text-ink-muted">
+                            Tell the AI how you'd like to adjust the proposed text.
+                          </div>
+                        </div>
+
+                        <div className="relative rounded-md border border-border bg-background px-3 py-2">
+                          <textarea
+                            value={refinePrompt}
+                            onChange={(e) => setRefinePrompt(e.target.value)}
+                            placeholder="E.g., Make it more concise and natural, reduce the academic tone, …"
+                            className="min-h-[56px] w-full resize-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted/70"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSubmitRefine(s.id)}
+                            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-brand transition hover:bg-paper"
+                            aria-label="Send refine prompt"
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
+                        {refineVariations[s.id] && (
+                          <div className="mt-3">
+                            <div className="mb-2 flex items-center justify-between">
+                              <div>
+                                <div className="font-serif text-sm font-medium text-ink">
+                                  Here are 3 variations
+                                </div>
+                                <div className="text-xs text-ink-muted">
+                                  Select the one that fits best, or refine further.
+                                </div>
+                              </div>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                  setRefineVariations((current) => ({
+                                    ...current,
+                                    [s.id]: [
+                                      "Artificial intelligence has fundamentally changed how scholars write.",
+                                      "Artificial intelligence is changing academic writing at its core.",
+                                      "Artificial intelligence has transformed academic writing.",
+                                    ],
+                                  }))
+                                }
+                                className="flex items-center gap-1 text-xs text-ink-muted transition hover:text-ink"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Regenerate
+                              </button>
+                            </div>
+
+                            <div className="space-y-2">
+                              {refineVariations[s.id].map((variation) => (
+                                <div
+                                  key={variation}
+                                  className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2.5"
+                                >
+                                  <div className="mt-1 h-4 w-4 shrink-0 rounded-full border border-border bg-background" />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-serif text-[13px] leading-snug text-ink">
+                                      {variation}
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
+                                  >
+                                    Preview
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

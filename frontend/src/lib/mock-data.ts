@@ -101,7 +101,8 @@ export const suggestions = [
     severity: "high",
     excerpt:
       "The technology, which has rapidly evolved over the past several years, presents both unprecedented opportunities and significant challenges...",
-    observation: "Your sentences average 14 words. This one runs to 31.",
+    observation:
+      "You typically write in shorter, more self-contained statements. This sentence unfolds across multiple clauses, which makes it feel more reflective.",
     tradeoff: {
       gain: "Shorter, punchier rhythm that reads like your past work.",
       loss: "Some nuance in the parenthetical clause about timing.",
