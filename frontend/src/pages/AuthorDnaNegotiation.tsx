@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { metrics, sampleText, suggestions, userBaseline } from "@/lib/mock-data";
+import { metrics, sampleText, suggestions } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import AppHeader from "@/components/AppHeader";
 import { Check, X, Sparkles, Activity, FileText, Send, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 
 function MetricBar({
@@ -212,58 +213,7 @@ export default function InfluenceDashboard() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      {/* Header */}
-      <header className="shrink-0 border-b border-border/60 bg-paper/40 backdrop-blur">
-        <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <div className="font-serif text-base font-semibold text-ink">AuthorDNA</div>
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5 text-brand"
-                aria-hidden="true"
-              >
-                <path
-                  d="M7 4c3 2 7 2 10 4s4 6 0 8-7 2-10 4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M17 4c-3 2-7 2-10 4S3 14 7 16s7 2 10 4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  opacity="0.7"
-                />
-                <circle cx="12" cy="6" r="1" fill="currentColor" />
-                <circle cx="12" cy="18" r="1" fill="currentColor" />
-              </svg>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <div className="hidden text-right md:block">
-              <div className="text-ink">{userBaseline.name}</div>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-muted text-brand">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* LEFT — A4 document */}
