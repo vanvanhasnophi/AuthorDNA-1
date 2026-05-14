@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 
-import AuthorDnaNegotiation from "@/pages/AuthorDnaNegotiation";
+import AnalysisPage from "@/pages/AnalysisPage";
 import FileUploadPage from "@/pages/FileUploadPage";
 import { useFileStore } from "@/stores/use-file-store";
 
@@ -22,7 +22,7 @@ const routes = [
   {
     path: "/analysis",
     element: <ProtectedRoute />,
-    children: [{ index: true, element: <AuthorDnaNegotiation /> }],
+    children: [{ index: true, element: <AnalysisPage /> }],
   },
 ];
 
