@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+@import url('/fonts/inter.css');
 @source "../src";
 
 @custom-variant dark (&:is([data-theme="dark"] *));
@@ -68,6 +69,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'InterVariable','Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+
 }
 
 :root {
@@ -201,6 +204,24 @@
 
   --category-default-fill: #6B7280;
   --category-default-soft: #F3F4F6;
+
+  --category-sf-fill-light: #E9C752;
+  --category-sf-soft-light: #FEF8DC;
+
+  --category-wc-fill-light: #6E93EE;
+  --category-wc-soft-light: #EEF4FF;
+
+  --category-st-fill-light: #A78BFA;
+  --category-st-soft-light: #F5F3FF;
+
+  --category-tone-fill-light: #2B86BF;
+  --category-tone-soft-light: #EAF5FB;
+
+  --category-pu-fill-light: #E38B4A;
+  --category-pu-soft-light: #FFF7F0;
+
+  --category-default-fill-light: #6B7280;
+  --category-default-soft-light: #F3F4F6;
 }
 
 :root[data-theme="dark"] {
@@ -224,8 +245,13 @@
     border-color: var(--color-border);
   }
 
+  html {
+    font-family: var(--font-sans);
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
 }
