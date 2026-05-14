@@ -1,0 +1,59 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#D9A441"/>
+      <stop offset="100%" stop-color="#BE8730"/>
+    </linearGradient>
+
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B3475"/>
+      <stop offset="100%" stop-color="#123F8C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 金色螺旋 -->
+  <path
+    d="
+      M 238 760
+      C 290 650, 395 665, 470 560
+      C 548 448, 470 368, 560 270
+      C 630 194, 720 210, 790 150
+    "
+    stroke="url(#gold)"
+    stroke-width="42"
+    stroke-linecap="butt"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- 蓝色螺旋 -->
+  <path
+    d="
+      M 225 790
+      C 310 690, 390 635, 462 565
+      C 565 466, 475 395, 590 305
+      C 665 245, 735 240, 835 178
+    "
+    stroke="url(#blue)"
+    stroke-width="42"
+    stroke-linecap="butt"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- 底部合拢尖端 -->
+  <path
+    d="M225 790 L238 760"
+    stroke="url(#blue)"
+    stroke-width="42"
+    stroke-linecap="butt"
+  />
+
+  <!-- 顶部斜切 -->
+  <path
+    d="M790 150 L835 178"
+    stroke="#FFFFFF"
+    stroke-width="18"
+    stroke-linecap="square"
+  />
+</svg>

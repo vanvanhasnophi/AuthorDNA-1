@@ -132,7 +132,7 @@ export function PreviewInspectorBridge() {
       clearHighlight()
       element.dataset.previewInspectorOutline = element.style.outline
       element.dataset.previewInspectorOutlineOffset = element.style.outlineOffset
-      element.style.outline = '2px solid rgba(201, 92, 31, 0.95)'
+      element.style.outline = '2px solid var(--outline-highlight)'
       element.style.outlineOffset = '2px'
       activeElementRef.current = element
     }

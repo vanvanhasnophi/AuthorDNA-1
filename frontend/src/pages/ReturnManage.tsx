@@ -258,9 +258,9 @@ export default function ReturnManage() {
   ]
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,rgba(197,225,255,0.32),transparent_34%),linear-gradient(180deg,#f4f8fb_0%,#edf3f7_48%,#e7eef4_100%)]">
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),transparent_42%,rgba(15,23,42,0.05)_100%)]" />
-      <div className="absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.1),transparent_70%)] opacity-80" />
+    <main className="relative min-h-screen overflow-hidden" style={{ background: 'var(--app-bg-gradient)' }}>
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.55), transparent 42%, rgba(15,23,42,0.05) 100%)' }} />
+      <div className="absolute inset-x-0 top-0 h-80 opacity-80" style={{ background: 'var(--app-top-gradient)' }} />
 
       <FloatingPageTools
         events={pageEvents}
