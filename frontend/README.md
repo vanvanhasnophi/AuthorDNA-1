@@ -96,6 +96,10 @@ npm run ui:add -- card dialog sheet
 - [src/components/MockInteractionModal.tsx](/home/yang/projects/commons/frontend-sample/src/components/MockInteractionModal.tsx)
 - [src/lib/agent-feedback-client.ts](/home/yang/projects/commons/frontend-sample/src/lib/agent-feedback-client.ts)
 
+数据格式说明：
+
+- [docs/author-dna-data-format.md](docs/author-dna-data-format.md)
+
 ## 关键文件
 
 - [components.json](/home/yang/projects/commons/frontend-sample/components.json)
