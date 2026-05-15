@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAuthorDnaDataset } from "@/lib/author-dna-data";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import { useAdminSession } from "@/stores/use-admin-session";
 
 type AppHeaderProps = {
   title?: ReactNode;
@@ -18,7 +22,9 @@ export default function AppHeader({
   showThemeToggle = true,
   showBrandIcon = true,
 }: AppHeaderProps) {
+  const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+  const { session, isAuthenticated } = useAdminSession();
   const [userName, setUserName] = useState("Unknown");
 
   useEffect(() => {
@@ -41,17 +47,27 @@ export default function AppHeader({
     };
   }, []);
 
+  const displayName = session?.username || userName;
+  const initials =
+    displayName
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "AD";
+
   return (
-    <header className="shrink-0 border-b border-border/70 bg-card/70 shadow-soft backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-50 shrink-0 border-b border-border/70 bg-card/85 shadow-soft backdrop-blur-[20px]">
       <div className="flex items-center justify-between gap-4 px-6 py-3">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <div className="app-title font-serif text-base font-semibold text-ink">{title}</div>
+            <div className="app-title font-serif text-base font-semibold text-ink text-[1.2rem]">{title}</div>
             {showBrandIcon ? (
               <svg
                 viewBox="0 0 24 24"
                 className="h-5 w-5 text-brand"
                 aria-hidden="true"
+                style={{height: '1.5rem', width: '1.5rem'}}
               >
                 <path
                   d="M7 4c3 2 7 2 10 4s4 6 0 8-7 2-10 4"
@@ -91,21 +107,44 @@ export default function AppHeader({
               {isDark ? <Sun className="h-5 w-5 text-ink-muted" /> : <Moon className="h-5 w-5 text-ink-muted" />}
             </button>
           ) : null}
-          <div className="hidden text-right md:block">
-            <div className="text-ink">{userName}</div>
-          </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-muted text-brand shadow-sm">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              aria-hidden="true"
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className={cn(
+                "group flex items-center gap-3 rounded-2xl px-3 text-left transition-colors",
+                "hover:bg-highlight/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+              )}
+              aria-label="进入 Workspace"
+              onClick={() => navigate('/workspace/home')}
             >
-              <path
-                d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z"
-                fill="currentColor"
-              />
-            </svg>
-          </div>
+              <div className="hidden text-right md:block">
+                <div className="text-sm font-medium text-ink group-hover:text-brand">{displayName}</div>
+              </div>
+              <Avatar className="size-9 border border-border/80 bg-brand-muted shadow-sm group-hover:border-brand">
+                <AvatarFallback className="bg-brand-muted text-xs font-semibold text-brand">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9 rounded-xl border border-transparent bg-transparent px-4 text-sm font-medium text-ink-muted shadow-none hover:bg-component-hover hover:text-ink"
+                onClick={() => navigate('/login')}
+              >
+                Sign in
+              </Button>
+              <Button
+                type="button"
+                className="h-9 rounded-xl bg-brand px-4 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand/90"
+                onClick={() => navigate('/register')}
+              >
+                Sign up
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>

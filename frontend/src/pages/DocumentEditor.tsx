@@ -1124,7 +1124,7 @@ export default function InfluenceDashboard() {
   };
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background pt-16">
       <AppHeader title={documentTitle} showBrandIcon={false}>
         <div className="hidden md:flex items-center gap-2">
           <div className="rounded-full border border-border bg-background p-1 text-[11px] text-ink-muted shadow-sm">
@@ -1549,7 +1549,7 @@ export default function InfluenceDashboard() {
         </section>
 
         {/* RIGHT — Influence Index + Suggestions */}
-        <aside className="min-h-0 overflow-y-auto border-l border-border bg-card">
+        <aside className="min-h-0 overflow-y-auto border-l border-border bg-background/80">
           {/* Influence Index */}
           <div className="border-b border-border p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
