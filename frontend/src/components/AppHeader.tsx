@@ -1,8 +1,31 @@
-import { userBaseline } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import { getAuthorDnaDataset } from "@/lib/author-dna-data";
 
 export default function AppHeader() {
+  const [userName, setUserName] = useState("Unknown");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getAuthorDnaDataset()
+      .then((dataset) => {
+        if (isMounted) {
+          setUserName(dataset.profile.name || "Unknown");
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setUserName("Unknown");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
-    <header className="shrink-0 border-b border-border/60 bg-paper/40 backdrop-blur">
+    <header className="shrink-0 border-b border-border/70 bg-card/70 shadow-soft backdrop-blur">
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
@@ -36,9 +59,9 @@ export default function AppHeader() {
         </div>
         <div className="flex items-center gap-3 text-sm">
           <div className="hidden text-right md:block">
-            <div className="text-ink">{userBaseline.name}</div>
+            <div className="text-ink">{userName}</div>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-muted text-brand">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-muted text-brand shadow-sm">
             <svg
               viewBox="0 0 24 24"
               className="h-5 w-5"

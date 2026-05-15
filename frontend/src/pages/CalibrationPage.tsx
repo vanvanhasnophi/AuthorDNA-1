@@ -1,40 +1,75 @@
-import { useMemo, useState } from "react";
-import { metrics as mockMetrics, suggestions as mockSuggestions } from "@/lib/mock-data";
-import type { MetricCategory } from "@/lib/mock-data";
+import { useEffect, useMemo, useState } from "react";
+import { getAuthorDnaDataset } from "@/lib/author-dna-data";
+import type { AuthorDnaDataset, AuthorDnaSuggestion, MetricCategory } from "@/lib/author-dna-data";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
-import { Check, RotateCcw, ArrowLeft } from "lucide-react";
+import { Check, RotateCcw, ArrowLeft, Activity, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const CATEGORY_COLORS: Record<string, { fill: string; soft: string }> = {
-  "Sentence Flow": { fill: "oklch(0.74 0.08 190)", soft: "oklch(0.95 0.02 190)" },
-  "Word Choice": { fill: "oklch(0.8 0.09 85)", soft: "oklch(0.95 0.02 85)" },
-  Structure: { fill: "oklch(0.77 0.07 250)", soft: "oklch(0.95 0.02 250)" },
-  Tone: { fill: "oklch(0.76 0.09 22)", soft: "oklch(0.95 0.02 22)" },
-  Punctuation: { fill: "oklch(0.76 0.07 335)", soft: "oklch(0.95 0.02 335)" },
+const CATEGORY_COLORS: Record<string, { fill: string; soft: string; lightFill: string; lightSoft: string }> = {
+  "Sentence Flow": { fill: "var(--category-sf-fill)", soft: "var(--category-sf-soft)" , lightFill: "var(--category-sf-fill-light)",lightSoft: "var(--category-sf-soft-light)"},
+  Tone: { fill: "var(--category-tone-fill)", soft: "var(--category-tone-soft)" , lightFill: "var(--category-tone-fill-light)",lightSoft: "var(--category-tone-soft-light)"},
+  "Word Choice": { fill: "var(--category-wc-fill)", soft: "var(--category-wc-soft)" , lightFill: "var(--category-wc-fill-light)",lightSoft: "var(--category-wc-soft-light)"},
+  Structure: { fill: "var(--category-st-fill)", soft: "var(--category-st-soft)" , lightFill: "var(--category-st-fill-light)",lightSoft: "var(--category-st-soft-light)"},
+  Punctuation: { fill: "var(--category-pu-fill)", soft: "var(--category-pu-soft)" , lightFill: "var(--category-pu-fill-light)",lightSoft: "var(--category-pu-soft-light)"},
+  default: { fill: "var(--category-default-fill)", soft: "var(--category-default-soft)" , lightFill: "var(--category-default-fill-light)",lightSoft: "var(--category-default-soft-light)"},
 };
-
 function getColor(category: string) {
   return CATEGORY_COLORS[category] ?? CATEGORY_COLORS["Sentence Flow"];
 }
 
 export default function CalibrationPage({ onComplete }: { onComplete: () => void }) {
+  const [dataset, setDataset] = useState<AuthorDnaDataset | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [rightMode, setRightMode] = useState<"actions" | "options">("actions");
   const [refinementIndex, setRefinementIndex] = useState(0);
   const [refinedCount, setRefinedCount] = useState(0);
-  const [adjustedMetrics, setAdjustedMetrics] = useState<MetricCategory[]>(mockMetrics);
+  const [adjustedMetrics, setAdjustedMetrics] = useState<MetricCategory[]>([]);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    getAuthorDnaDataset()
+      .then((nextDataset) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setDataset(nextDataset);
+        setAdjustedMetrics(nextDataset.metrics);
+        setLoadError(null);
+      })
+      .catch((error: unknown) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setDataset(null);
+        setAdjustedMetrics([]);
+        setLoadError(error instanceof Error ? error.message : "Failed to load AuthorDNA dataset");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const suggestions = dataset?.suggestions ?? [];
+  const currentSuggestion = suggestions.length > 0 ? suggestions[refinementIndex % suggestions.length] : null;
+
   const overall = useMemo(
-    () => Math.round(adjustedMetrics.reduce((s, m) => s + m.score, 0) / adjustedMetrics.length),
+    () => (adjustedMetrics.length > 0 ? Math.round(adjustedMetrics.reduce((s, m) => s + m.score, 0) / adjustedMetrics.length) : 0),
     [adjustedMetrics],
   );
 
-  const currentSuggestion = mockSuggestions[refinementIndex % mockSuggestions.length];
+  const buildOptions = (suggestion: AuthorDnaSuggestion | null) => {
+    if (!suggestion) {
+      return [];
+    }
 
-  const buildOptions = () => {
-    const cat = currentSuggestion.category;
-    const proposed = currentSuggestion.proposed;
+    const cat = suggestion.category;
+    const proposed = suggestion.proposed;
     const options = [proposed];
 
     switch (cat) {
@@ -72,7 +107,7 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
     return options.slice(0, 3);
   };
 
-  const options = buildOptions();
+  const options = buildOptions(currentSuggestion);
 
   const handleRefine = () => {
     setRightMode("options");
@@ -85,7 +120,7 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
   };
 
   const handleConfirm = () => {
-    if (selectedOption === null) return;
+    if (selectedOption === null || !currentSuggestion) return;
 
     const bonus = Math.floor(Math.random() * 4) + 2;
     const category = currentSuggestion.category;
@@ -101,17 +136,54 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
     setRightMode("actions");
   };
 
+  if (!dataset) {
+    return (
+      <div
+        className="flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(185,208,255,0.18),_transparent_40%),var(--app-bg-gradient)] text-foreground"
+        style={{ backgroundImage: "var(--app-top-gradient), var(--app-bg-gradient)" }}
+      >
+        <AppHeader />
+        <main className="flex min-h-0 flex-1 items-center justify-center px-8 py-8">
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-8 shadow-soft">
+            <div className="flex items-center gap-2 text-brand">
+              <Activity className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-[0.24em]">Calibration</span>
+            </div>
+            <div className="mt-4 space-y-3">
+              <h1 className="font-serif text-2xl text-ink">Loading your calibration profile</h1>
+              <p className="max-w-xl text-sm leading-relaxed text-ink-muted">
+                We are pulling the shared baseline metrics and suggestion set used by the negotiation view.
+              </p>
+              {loadError ? <p className="text-sm text-destructive">{loadError}</p> : null}
+            </div>
+            <div className="mt-6 h-2.5 w-full overflow-hidden rounded-full bg-brand-muted/80">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-brand" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div
+      className="flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(185,208,255,0.18),_transparent_40%),var(--app-bg-gradient)] text-foreground"
+      style={{ backgroundImage: "var(--app-top-gradient), var(--app-bg-gradient)" }}
+    >
       <AppHeader />
       <main className="grid min-h-0 flex-1 grid-cols-[2fr_1fr]">
-        {/* ─── LEFT: Dashboard (66%) ─── */}
-        <section className="min-h-0 overflow-y-auto border-r border-border px-8 py-8">
+        <section className="min-h-0 overflow-y-auto border-r border-border/60 px-8 py-8">
           <div className="mx-auto max-w-2xl space-y-6">
-            <h1 className="font-serif text-2xl text-ink">Your Writing Profile</h1>
+            <div className="flex items-center gap-2 text-brand">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-[0.24em]">Calibration pass</span>
+            </div>
+            <h1 className="font-serif text-3xl text-ink">Your Writing Profile</h1>
+            <p className="max-w-xl text-sm leading-relaxed text-ink-muted">
+              Compare the baseline signal against the current document, then refine the metrics that feel off.
+            </p>
 
-            {/* Overall score */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-soft">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-serif text-lg text-ink">DNA Alignment</h2>
                 <span className="font-serif text-2xl text-ink">{overall}</span>
@@ -124,12 +196,11 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
               </div>
             </div>
 
-            {/* Metric cards */}
             <div className="space-y-3">
               {adjustedMetrics.map((m) => {
                 const c = getColor(m.name);
                 return (
-                  <div key={m.id} className="rounded-xl border border-border bg-card p-5 shadow-soft">
+                  <div key={m.id} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm font-medium text-ink">{m.name}</span>
                       <span className="font-serif text-sm tabular-nums text-ink-muted">{m.score}</span>
@@ -154,10 +225,15 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
           </div>
         </section>
 
-        {/* ─── RIGHT: Action panel (33%) ─── */}
-        <aside className="flex min-h-0 flex-col overflow-y-auto bg-card p-6">
+        <aside className="flex min-h-0 flex-col overflow-y-auto bg-card/80 p-6 backdrop-blur">
           {rightMode === "actions" ? (
             <div className="flex flex-col gap-4">
+              <div className="rounded-2xl border border-border bg-background p-4 shadow-soft">
+                <div className="text-xs uppercase tracking-[0.24em] text-ink-muted">Current profile</div>
+                <div className="mt-2 font-serif text-lg text-ink">{dataset.profile.name}</div>
+                <p className="mt-2 text-sm leading-relaxed text-ink-muted">{dataset.profile.voiceSummary}</p>
+              </div>
+
               <Button size="lg" className="w-full font-serif" onClick={onComplete}>
                 <Check className="mr-2 h-4 w-4" />
                 Accept Analysis
@@ -192,9 +268,7 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
 
               <div>
                 <p className="mb-1 text-xs uppercase tracking-wider text-ink-muted">From your text</p>
-                <p className="text-sm leading-relaxed text-ink-muted">
-                  "{currentSuggestion.excerpt}"
-                </p>
+                <p className="text-sm leading-relaxed text-ink-muted">“{currentSuggestion?.excerpt ?? ""}”</p>
               </div>
 
               <p className="font-serif text-sm text-ink">How would YOU express this?</p>
