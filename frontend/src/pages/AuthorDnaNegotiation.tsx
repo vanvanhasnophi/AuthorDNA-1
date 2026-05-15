@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { loadAuthorDnaDataset } from "@/lib/author-dna-data";
 import type { AuthorDnaDataset } from "@/lib/author-dna-data";
+import AppHeader from "@/components/AppHeader";
 import { cn } from "@/lib/utils";
-import { Check, X, Sparkles, Activity, Send, RotateCcw, ChevronDown, ChevronUp, Sun, Moon } from "lucide-react";
+import { Check, X, Sparkles, Activity, Send, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 
 type ViewMode = "document" | "sentence";
 
@@ -825,27 +826,8 @@ export default function InfluenceDashboard() {
   const [hoveredPreview, setHoveredPreview] = useState<SentencePreview | null>(null);
   const [showAccepted, setShowAccepted] = useState<boolean>(true);
   const [showDismissed, setShowDismissed] = useState<boolean>(true);
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem("theme");
-      if (stored === "dark") return true;
-      if (stored === "light") return false;
-    } catch (e) {
-      // ignore
-    }
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
   const [viewMode, setViewMode] = useState<ViewMode>("document");
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([]);
-
-  useEffect(() => {
-    try {
-      document.documentElement.dataset.theme = isDark ? "dark" : "light";
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-    } catch (e) {
-      // ignore
-    }
-  }, [isDark]);
 
   useEffect(() => {
     let isMounted = true;
@@ -875,7 +857,6 @@ export default function InfluenceDashboard() {
 
   const metrics = dataset?.metrics ?? [];
   const suggestions = dataset?.suggestions ?? [];
-  const userBaseline = dataset?.profile ?? null;
   const documentTitle = dataset?.document.title ?? "Writing in the age of AI";
   const documentParagraphs = dataset?.document.paragraphs ?? [];
   const sampleText = documentParagraphs.join("\n\n");
@@ -1144,109 +1125,44 @@ export default function InfluenceDashboard() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      {/* Header */}
-      <header className="shrink-0 border-b border-border/60 bg backdrop-blur">
-        <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-6 w-6 text-brand"
-              aria-hidden="true"
-            >
-              <path
-                d="M7 4c3 2 7 2 10 4s4 6 0 8-7 2-10 4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M17 4c-3 2-7 2-10 4S3 14 7 16s7 2 10 4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.7"
-              />
-              <circle cx="12" cy="6" r="1" fill="currentColor" />
-              <circle cx="12" cy="18" r="1" fill="currentColor" />
-            </svg>
-
-            <div className="hidden md:block">
-              <div className="font-serif text-base font-semibold text-ink">{documentTitle}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+      <AppHeader title={documentTitle} showBrandIcon={false}>
+        <div className="hidden md:flex items-center gap-2">
+          <div className="rounded-full border border-border bg-background p-1 text-[11px] text-ink-muted shadow-sm">
             <button
               type="button"
-              onClick={() => setIsDark((v) => !v)}
-              className="rounded-md p-1 hover:border-brand flex items-center"
-              aria-label="Toggle color theme"
-              role="switch"
-              aria-checked={isDark}
+              onClick={() => {
+                setViewMode("document");
+                setActiveRefineId(null);
+                setRefinePrompt("");
+              }}
+              className={cn(
+                "rounded-full px-3 py-1 transition",
+                viewMode === "document" ? "bg-brand text-brand-foreground" : "hover:text-ink",
+              )}
             >
-              <span className="sr-only">Toggle dark mode</span>
-              {isDark ? <Sun className="h-5 w-5 text-ink-muted" /> : <Moon className="h-5 w-5 text-ink-muted" />}
+              Document
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode("sentence");
+                setActiveRefineId(null);
+                setRefinePrompt("");
+              }}
+              className={cn(
+                "rounded-full px-3 py-1 transition",
+                viewMode === "sentence" ? "bg-brand text-brand-foreground" : "hover:text-ink",
+              )}
+            >
+              Sentence view
             </button>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <div className="hidden md:flex items-center gap-2">
-              <div className="rounded-full border border-border bg-background p-1 text-[11px] text-ink-muted shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("document");
-                    setActiveRefineId(null);
-                    setRefinePrompt("");
-                  }}
-                  className={cn(
-                    "rounded-full px-3 py-1 transition",
-                    viewMode === "document" ? "bg-brand text-brand-foreground" : "hover:text-ink",
-                  )}
-                >
-                  Document
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("sentence");
-                    setActiveRefineId(null);
-                    setRefinePrompt("");
-                  }}
-                  className={cn(
-                    "rounded-full px-3 py-1 transition",
-                    viewMode === "sentence" ? "bg-brand text-brand-foreground" : "hover:text-ink",
-                  )}
-                >
-                  Sentence view
-                </button>
-              </div>
-              <span className="rounded-full bg-brand-muted px-2.5 py-1 text-brand">
-                <Activity className="mr-1 inline h-3 w-3" />
-                Live analysis
-              </span>
-            </div>
-
-            <div className="hidden text-right md:block">
-              <div className="text-ink">{userBaseline?.name ?? "Unknown"}</div>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-muted text-brand">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </div>
-          </div>
+          <span className="rounded-full bg-brand-muted px-2.5 py-1 text-brand">
+            <Activity className="mr-1 inline h-3 w-3" />
+            Live analysis
+          </span>
         </div>
-      </header>
+      </AppHeader>
 
       <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* LEFT — A4 document */}

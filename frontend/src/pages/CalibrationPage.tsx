@@ -205,7 +205,7 @@ export default function CalibrationPage({ onComplete }: { onComplete: () => void
                       <span className="text-sm font-medium text-ink">{m.name}</span>
                       <span className="font-serif text-sm tabular-nums text-ink-muted">{m.score}</span>
                     </div>
-                    <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-paper">
+                    <div className="mb-3 h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: c.soft }}>
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{ width: `${m.score}%`, backgroundColor: c.fill }}

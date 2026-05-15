@@ -62,7 +62,7 @@ export default function FileDropZone() {
           "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-12 transition-colors",
           dragging
             ? "border-brand bg-brand-muted/20"
-            : "border-border hover:border-brand/60 hover:bg-paper/40",
+            : "border-border hover:border-brand/60",
         ].join(" ")}
       >
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-muted/30 text-brand">
