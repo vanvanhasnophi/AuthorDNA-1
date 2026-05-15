@@ -55,6 +55,7 @@ export type AuthorDnaDataset = {
 }
 
 const DATA_URL = '/data/author-dna-dataset.json'
+let datasetPromise: Promise<AuthorDnaDataset> | null = null
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -201,4 +202,12 @@ export async function loadAuthorDnaDataset(): Promise<AuthorDnaDataset> {
 
   const raw = await response.json()
   return normalizeAuthorDnaDataset(raw)
+}
+
+export function getAuthorDnaDataset(): Promise<AuthorDnaDataset> {
+  if (!datasetPromise) {
+    datasetPromise = loadAuthorDnaDataset()
+  }
+
+  return datasetPromise
 }

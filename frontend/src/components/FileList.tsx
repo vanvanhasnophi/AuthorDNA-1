@@ -17,7 +17,7 @@ function FileRow({ file }: { file: UploadedFileInfo }) {
         <p className="truncate font-serif text-sm text-ink">{file.name}</p>
         <p className="text-xs text-ink-muted">{formatFileSize(file.size)}</p>
       </div>
-      <span className="shrink-0 rounded-full border border-border bg-paper/60 px-2.5 py-0.5 text-[11px] font-medium uppercase text-ink-muted">
+      <span className="shrink-0 rounded-full border border-border bg-brand/30 px-2.5 py-0.5 text-[11px] font-medium uppercase text-ink-muted">
         {formatType(file.name)}
       </span>
       <button
