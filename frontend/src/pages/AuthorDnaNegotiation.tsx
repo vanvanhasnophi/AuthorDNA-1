@@ -18,13 +18,13 @@ type SuggestionItem = {
   observation?: string;
 };
 
-const CATEGORY_COLORS: Record<string, { fill: string; soft: string }> = {
-  "Sentence Flow": { fill: "var(--category-sf-fill)", soft: "var(--category-sf-soft)" },
-  Tone: { fill: "var(--category-tone-fill)", soft: "var(--category-tone-soft)" },
-  "Word Choice": { fill: "var(--category-wc-fill)", soft: "var(--category-wc-soft)" },
-  Structure: { fill: "var(--category-st-fill)", soft: "var(--category-st-soft)" },
-  Punctuation: { fill: "var(--category-pu-fill)", soft: "var(--category-pu-soft)" },
-  default: { fill: "var(--category-default-fill)", soft: "var(--category-default-soft)" },
+const CATEGORY_COLORS: Record<string, { fill: string; soft: string; lightFill: string; lightSoft: string }> = {
+  "Sentence Flow": { fill: "var(--category-sf-fill)", soft: "var(--category-sf-soft)" , lightFill: "var(--category-sf-fill-light)",lightSoft: "var(--category-sf-soft-light)"},
+  Tone: { fill: "var(--category-tone-fill)", soft: "var(--category-tone-soft)" , lightFill: "var(--category-tone-fill-light)",lightSoft: "var(--category-tone-soft-light)"},
+  "Word Choice": { fill: "var(--category-wc-fill)", soft: "var(--category-wc-soft)" , lightFill: "var(--category-wc-fill-light)",lightSoft: "var(--category-wc-soft-light)"},
+  Structure: { fill: "var(--category-st-fill)", soft: "var(--category-st-soft)" , lightFill: "var(--category-st-fill-light)",lightSoft: "var(--category-st-soft-light)"},
+  Punctuation: { fill: "var(--category-pu-fill)", soft: "var(--category-pu-soft)" , lightFill: "var(--category-pu-fill-light)",lightSoft: "var(--category-pu-soft-light)"},
+  default: { fill: "var(--category-default-fill)", soft: "var(--category-default-soft)" , lightFill: "var(--category-default-fill-light)",lightSoft: "var(--category-default-soft-light)"},
 };
 
 function getCategoryColor(name: string) {
@@ -756,9 +756,9 @@ function renderParagraphWithHover(
     <>
       {renderFlaggedText(before, flaggedTokens)}
       <mark
-        className="rounded-sm px-0.5 py-0.5 text-ink"
+        className="rounded-sm px-0.5 py-0.5 text-paper-foreground"
         style={{
-          backgroundColor: hoverColor ?? CATEGORY_COLORS["Sentence Flow"].soft,
+          backgroundColor: hoverColor ?? CATEGORY_COLORS["Sentence Flow"].lightSoft,
         }}
       >
         {concern}
@@ -823,6 +823,8 @@ export default function InfluenceDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [hoveredSuggestionId, setHoveredSuggestionId] = useState<string | null>(null);
   const [hoveredPreview, setHoveredPreview] = useState<SentencePreview | null>(null);
+  const [showAccepted, setShowAccepted] = useState<boolean>(true);
+  const [showDismissed, setShowDismissed] = useState<boolean>(true);
   const [isDark, setIsDark] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem("theme");
@@ -883,9 +885,16 @@ export default function InfluenceDashboard() {
     [metrics],
   );
 
-  const visibleSuggestions = selectedCategory
+  let visibleSuggestions = selectedCategory
     ? suggestions.filter((s) => s.category === selectedCategory)
     : suggestions;
+
+  visibleSuggestions = visibleSuggestions.filter((s) => {
+    const state = resolved[s.id];
+    if (state === "accept") return showAccepted;
+    if (state === "reject" || state === "conflict") return showDismissed;
+    return true;
+  });
   const hoveredSuggestion = suggestions.find((s) => s.id === hoveredSuggestionId) ?? null;
   const hoveredColor = hoveredSuggestion ? getCategoryColor(hoveredSuggestion.category) : null;
   const hoveredTarget = hoveredSuggestion?.targetText ?? null;
@@ -1173,7 +1182,7 @@ export default function InfluenceDashboard() {
             <button
               type="button"
               onClick={() => setIsDark((v) => !v)}
-              className="rounded-md p-1 hover:bg-paper/50 flex items-center"
+              className="rounded-md p-1 hover:border-brand flex items-center"
               aria-label="Toggle color theme"
               role="switch"
               aria-checked={isDark}
@@ -1274,7 +1283,7 @@ export default function InfluenceDashboard() {
                           paragraph,
                           flaggedTokens,
                           hoveredTarget,
-                          hoveredColor ? hoveredColor.soft : null,
+                          hoveredColor ? hoveredColor.lightSoft : null,
                         )}
                       </p>
                     ))}
@@ -1378,7 +1387,7 @@ export default function InfluenceDashboard() {
                                         className={cn(
                                           "rounded-lg border p-3 shadow-soft transition",
                                           isAccepted && "border-brand/40 bg-brand-muted/30",
-                                          isRejected && "border-border bg-slate-100 opacity-55 grayscale",
+                                          isRejected && "border-border opacity-55 grayscale",
                                           !state && "border-border bg-background hover:border-brand/50",
                                           hoveredSuggestionId === suggestion.id && !state && "border-brand/50",
                                         )}
@@ -1444,7 +1453,7 @@ export default function InfluenceDashboard() {
                                               <button
                                                 type="button"
                                                 onClick={() => handleDismissSuggestion(suggestion.id)}
-                                                className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:bg-paper"
+                                                className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:border-brand"
                                               >
                                                 <X className="h-3 w-3" /> Dismiss
                                               </button>
@@ -1454,8 +1463,8 @@ export default function InfluenceDashboard() {
                                                 className={cn(
                                                   "flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs transition",
                                                   activeRefineId === suggestion.id
-                                                    ? "border-brand bg-brand-muted/30 text-ink"
-                                                    : "border-border bg-background text-ink hover:bg-paper",
+                                                    ? "border-brand bg-brand-muted/30 text-brand"
+                                                    : "border-border bg-background text-ink hover:border-brand",
                                                 )}
                                               >
                                                 <Sparkles className="h-3 w-3" /> Refine
@@ -1483,7 +1492,7 @@ export default function InfluenceDashboard() {
                                                   <button
                                                     type="button"
                                                     onClick={() => handleSubmitRefine(suggestion.id)}
-                                                    className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-brand transition hover:bg-paper"
+                                                    className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-brand transition hover:border-brand"
                                                     aria-label="Send refine prompt"
                                                   >
                                                     <Send className="h-3.5 w-3.5" />
@@ -1557,7 +1566,7 @@ export default function InfluenceDashboard() {
                                                           <button
                                                             type="button"
                                                             onClick={() => handleAcceptSuggestion(suggestion.id, variation)}
-                                                            className="mt-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
+                                                            className="mt-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:border-brand"
                                                           >
                                                             Accept
                                                           </button>
@@ -1574,7 +1583,7 @@ export default function InfluenceDashboard() {
                                             "rounded-md border p-2.5 text-xs",
                                             isAccepted
                                               ? "border-brand/30 bg-brand-muted/20 text-ink"
-                                              : "border-border bg-slate-100 text-ink-muted",
+                                              : "border-border text-ink-muted",
                                           )}>
                                             <div className="flex items-center justify-between gap-3">
                                               <span className="font-medium">
@@ -1729,6 +1738,27 @@ export default function InfluenceDashboard() {
               <h3 className="font-serif text-sm text-ink">
                 Suggestions <span className="text-ink-muted">· {visibleSuggestions.length}</span>
               </h3>
+              <div className="flex items-center gap-3">
+                <div className="text-xs text-ink-muted">Show:</div>
+                <label className="inline-flex items-center gap-2 text-xs text-ink">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border border-border bg-background"
+                    checked={showAccepted}
+                    onChange={(e) => setShowAccepted(e.target.checked)}
+                  />
+                  <span className="text-xs">Accepted</span>
+                </label>
+                <label className="inline-flex items-center gap-2 text-xs text-ink">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border border-border bg-background"
+                    checked={showDismissed}
+                    onChange={(e) => setShowDismissed(e.target.checked)}
+                  />
+                  <span className="text-xs">Dismissed</span>
+                </label>
+              </div>
             </div>
             <div className="space-y-2.5 p-4">
               {visibleSuggestions.map((s) => {
@@ -1761,6 +1791,7 @@ export default function InfluenceDashboard() {
                       !state && "border-border bg-background hover:border-brand/40",
                     )}
                     onMouseEnter={() => {
+                      if (state) return;
                       setHoveredSuggestionId(s.id);
                       setHoveredPreview({ suggestionId: s.id, replacementText: s.proposedPreview ?? s.proposed });
                       const key = sentenceSuggestionIndex.idToKey?.get(s.id);
@@ -1819,7 +1850,7 @@ export default function InfluenceDashboard() {
                         </button>
                         <button
                           onClick={() => handleDismissSuggestion(s.id)}
-                          className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:bg-paper"
+                          className="flex items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-ink transition hover:border-brand"
                         >
                           <X className="h-3 w-3" /> Dismiss
                         </button>
@@ -1829,8 +1860,8 @@ export default function InfluenceDashboard() {
                           className={cn(
                             "flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs transition",
                             activeRefineId === s.id
-                              ? "border-brand bg-brand-muted/30 text-ink"
-                              : "border-border bg-background text-ink hover:bg-paper",
+                              ? "border-brand text-brand bg-brand-muted/30"
+                              : "border-border bg-background text-ink hover:border-brand",
                           )}
                         >
                           <Sparkles className="h-3 w-3" /> Refine
@@ -1839,7 +1870,7 @@ export default function InfluenceDashboard() {
                     )}
 
                     {state && (
-                      <div className="mt-2 flex items-center justify-between rounded-md border border-border/60 bg-slate-50 px-2.5 py-2 text-[11px] text-ink-muted">
+                      <div className="mt-2 flex items-center justify-between rounded-md border border-border/60 px-2.5 py-2 text-[11px] text-ink-muted">
                         <span>{state === "accept" ? "Applied" : statusLabel}</span>
                         {state !== "conflict" && (
                           <button
@@ -1874,7 +1905,7 @@ export default function InfluenceDashboard() {
                           <button
                             type="button"
                             onClick={() => handleSubmitRefine(s.id)}
-                            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-brand transition hover:bg-paper"
+                            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-brand transition hover:border-brand"
                             aria-label="Send refine prompt"
                           >
                             <Send className="h-3.5 w-3.5" />
@@ -1934,7 +1965,7 @@ export default function InfluenceDashboard() {
                                   <button
                                     type="button"
                                     onClick={() => handleAcceptSuggestion(s.id, variation)}
-                                    className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:bg-paper"
+                                    className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-ink transition hover:border-brand"
                                   >
                                     Accept
                                   </button>
