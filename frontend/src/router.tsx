@@ -1,29 +1,12 @@
-import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { createBrowserRouter } from 'react-router-dom'
 
-import AnalysisPage from "@/pages/AnalysisPage";
-import FileUploadPage from "@/pages/FileUploadPage";
-import { useFileStore } from "@/stores/use-file-store";
-
-function ProtectedRoute() {
-  const hasFiles = useFileStore((s) => s.files.length > 0);
-  if (!hasFiles) return <Navigate to="/upload" replace />;
-  return <Outlet />;
-}
+import AuthorDnaNegotiation from '@/pages/AuthorDnaNegotiation'
 
 const routes = [
   {
-    path: "/",
-    element: <Navigate to="/upload" replace />,
+    path: '/',
+    element: <AuthorDnaNegotiation />,
   },
-  {
-    path: "/upload",
-    element: <FileUploadPage />,
-  },
-  {
-    path: "/analysis",
-    element: <ProtectedRoute />,
-    children: [{ index: true, element: <AnalysisPage /> }],
-  },
-];
+]
 
-export const router = createBrowserRouter(routes);
+export const router = createBrowserRouter(routes)
