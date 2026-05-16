@@ -1,5 +1,6 @@
 import { ArrowRight, BookOpenText, Compass, Layers3, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAdminSession } from '@/stores/use-admin-session'
 
 import AppHeader from '@/components/AppHeader'
 import { Button } from '@/components/ui/button'
@@ -39,6 +40,7 @@ const previewPanels = [
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAdminSession()
 
   return (
     <main className="relative min-h-screen overflow-hidden" style={{ background: 'var(--app-bg-gradient)' }}>
@@ -62,13 +64,22 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button type="button" onClick={() => navigate('/register')}>
-              Create an account
-              <ArrowRight className="size-4" />
-            </Button>
-            <Button type="button" variant="outline" onClick={() => navigate('/login')}>
-              Sign in
-            </Button>
+            {isAuthenticated ? (
+              <Button type="button" onClick={() => navigate('/workspace/home')}>
+                Go to workspace
+                <ArrowRight className="size-4" />
+              </Button>
+            ) : (
+              <>
+                <Button type="button" onClick={() => navigate('/register')}>
+                  Create an account
+                  <ArrowRight className="size-4" />
+                </Button>
+                <Button type="button" variant="outline" onClick={() => navigate('/login')}>
+                  Sign in
+                </Button>
+              </>
+            )}
           </div>
         </section>
 
@@ -88,7 +99,7 @@ export default function LandingPage() {
 
               return (
                 <div key={item.title} className="space-y-4 border-t border-border/70 pt-6 text-center">
-                  <div className="flex size-11 items-center justify-center rounded-2xl border border-border/70 bg-background">
+                  <div className="mx-auto flex size-11 items-center justify-center rounded-2xl border border-border/70 bg-background">
                     <Icon className="size-5 text-foreground" />
                   </div>
                   <div className="space-y-2">
@@ -176,12 +187,21 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Button type="button" onClick={() => navigate('/register')}>
-                  Register free
-                </Button>
-                <Button type="button" variant="outline" onClick={() => navigate('/login')}>
-                  Sign in
-                </Button>
+                {isAuthenticated ? (
+                  <Button type="button" onClick={() => navigate('/workspace/home')}>
+                    Go to workspace
+                    <ArrowRight className="size-4" />
+                  </Button>
+                ) : (
+                  <>
+                    <Button type="button" onClick={() => navigate('/register')}>
+                      Register free
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/login')}>
+                      Sign in
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

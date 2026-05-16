@@ -1,8 +1,11 @@
-import { Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { Sparkles, ChevronDown, ArrowRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 
 import { SectionCard } from './workspace-shared'
 
-const dnaDimensions = [
+export const dnaDimensions = [
   {
     name: 'Sentence Flow',
     summary: 'Compact, direct cadence',
@@ -41,32 +44,79 @@ const dnaDimensions = [
 ] as const
 
 export default function WorkspaceWritingDna() {
-  return (
-    <SectionCard
-      title="Writing DNA"
-      description="Read your writing through the same five dimensions used in Calibration, with a compact summary and a deeper profile for each one."
-      icon={Sparkles}
-    >
-      <div className="grid gap-4 xl:grid-cols-2">
-        {dnaDimensions.map((dimension) => (
-          <article key={dimension.name} className="rounded-3xl border border-border/80 bg-card/80 p-5 shadow-sm">
-            <div className="border-b border-border/70 pb-4">
-              <div className="text-sm font-medium uppercase tracking-[0.18em] text-foreground/50">
-                {dimension.name}
-              </div>
-              <h2 className="mt-1 text-xl font-semibold text-foreground">{dimension.summary}</h2>
-              <p className="mt-2 text-sm leading-6 text-foreground/55">
-                Comparable writer: {dimension.comparableWriter}
-              </p>
-            </div>
+  const [open, setOpen] = useState<Record<string, boolean>>({})
+  const navigate = useNavigate()
 
-            <div className="mt-4 rounded-2xl border border-border/70 bg-background/70 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-foreground/45">Detailed analysis</div>
-              <p className="mt-2 text-sm leading-6 text-foreground/70">{dimension.detail}</p>
-            </div>
-          </article>
-        ))}
+  const toggle = (name: string) => setOpen((s) => ({ ...s, [name]: !s[name] }))
+
+  return (
+    <>
+      <SectionCard
+        title="Writing DNA"
+        description="Read your writing through the same five dimensions used in Calibration, with a compact summary and a deeper profile for each one."
+        icon={Sparkles}
+      >
+        <div className="grid gap-4 xl:grid-cols-2">
+          {dnaDimensions.map((dimension) => (
+            <article key={dimension.name} className="rounded-3xl border border-border/80 bg-card/80 p-5 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-sm font-medium uppercase tracking-[0.18em] text-foreground/50">
+                    {dimension.name}
+                  </div>
+                  <h2 className="mt-1 text-xl font-semibold text-foreground">{dimension.summary}</h2>
+                  <p className="mt-2 text-sm leading-6 text-foreground/55">Comparable writer: {dimension.comparableWriter}</p>
+                </div>
+                <button
+                  aria-expanded={!!open[dimension.name]}
+                  onClick={() => toggle(dimension.name)}
+                  className="ml-4 mt-1 rounded-md p-2 hover:bg-highlight/8"
+                >
+                  <ChevronDown className={`transition-transform ${open[dimension.name] ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+
+              {open[dimension.name] && (
+                <div className="mt-4 rounded-2xl border border-border/70 bg-background/70 p-4">
+                  <div className="text-xs uppercase tracking-[0.18em] text-foreground/45">Detailed analysis</div>
+                  <p className="mt-2 text-sm leading-6 text-foreground/70">{dimension.detail}</p>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      </SectionCard>
+      <div className="mt-5 rounded-2xl border border-border/80 bg-card/60 p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <ArrowRight className="size-4" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <h2 className="text-base font-semibold text-foreground">Quick questionnaire (coming soon)</h2>
+            <p className="text-sm leading-6 text-foreground/50">
+              A short guided survey to help refine your Writing DNA. This feature is not implemented yet.
+            </p>
+          </div>
+          <Button type="button" onClick={() => navigate('/workspace/writing-dna#questionnaire')} className="rounded-xl px-4">
+            Open questionnaire
+          </Button>
+        </div>
       </div>
-    </SectionCard>
+      <SectionCard
+        title="Reference articles"
+        description="Upload and manage reference articles that inform your baseline profile."
+        icon={Sparkles}
+      >
+        <div className="space-y-3">
+          <div className="text-sm text-foreground/60">Store PDFs, notes, or exemplar articles that reflect your preferred voice and structure.</div>
+          <div className="flex items-center gap-3">
+            <Button type="button" onClick={() => navigate('/workspace/works')}>Manage references</Button>
+            <Button type="button" variant="outline" onClick={() => navigate('/upload')}>Upload new</Button>
+          </div>
+        </div>
+      </SectionCard>
+
+
+    </>
   )
 }
