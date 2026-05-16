@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('/fonts/inter.css');
 @source "../src";
 
 @custom-variant dark (&:is([data-theme="dark"] *));
